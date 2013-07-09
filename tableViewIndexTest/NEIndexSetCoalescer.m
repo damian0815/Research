@@ -153,7 +153,7 @@
 		NSRange lastRange = [[newRemovedArray lastObject] rangeValue];
 		requiredSize = MAX(requiredSize,NSMaxRange(lastRange));
 	}
-	[self populateStupidArrayToSize:requiredSize];
+	[self populateStupidArrayToSize:requiredSize+1];
 
 	
 	// apply the changes
@@ -273,7 +273,7 @@
 	self.coalescedAdds = parsedInsertions;
 	self.coalescedRemoves = parsedRemovals;
 	
-	//NSLog(@"Coalesce took added %@ and removed %@ to end with %@, result adds %@ removes %@", newAdded, newRemoved, self.stupidArray, self.coalescedAdds, self.coalescedRemoves );
+	NSLog(@"Coalesce took added %@ and removed %@ to end with %@, result adds %@ removes %@", newAdded, newRemoved, self.stupidArray, self.coalescedAdds, self.coalescedRemoves );
 }
 
 //- (void)complexCoalesceAdds:(NSIndexSet *)newAdded removes:(NSIndexSet *)newRemoved
