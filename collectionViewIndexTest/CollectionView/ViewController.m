@@ -154,6 +154,8 @@ NSIndexSet* makeIS(int idx)
 - (void)doRandomIndexSetCoalescerTest:(int)runIndex
 {
 
+	DLog(@"\n\n\n\n\nrun %3i", runIndex);
+	
 	NSMutableArray* titles = [self.titles mutableCopy];
 	
 	NEIndexSetCoalescer* coalescer = [[NEIndexSetCoalescer alloc] init];
@@ -189,8 +191,8 @@ NSIndexSet* makeIS(int idx)
 	
 	
 	NSMutableIndexSet* removes = [[NSMutableIndexSet alloc] init];
-	/*
-	int removeCount = rand()%3;
+	
+	int removeCount = /*rand()%3*/1;
 	for ( int i=0; i<removeCount; i++ )
 	{
 		int idx = NSNotFound;
@@ -205,12 +207,11 @@ NSIndexSet* makeIS(int idx)
 	}
 	[titles removeObjectsAtIndexes:removes];
 	[coalescer coalesceAdds:nil removes:removes];
-	*/
+	
 	
 	
 	
 	DLog(@"insert %@, remove %@", insertions, removes);
-	self.titles = titles;
 	unsigned int actualMoveTo = NSNotFound;
 	if ( itemToMove )
 	{
@@ -230,6 +231,8 @@ NSIndexSet* makeIS(int idx)
 		[removesArray addObject:makeIP(idx)];
 	}];
 	
+	// update the data source
+	self.titles = titles;
 	DLog(@"****** started with %@", [self stringFromArray:[self initialArrayContents]]);
 	DLog(@"******   ended with %@", [self stringFromArray:self.titles]);
 	[self.collectionView performBatchUpdates:^{
@@ -290,7 +293,7 @@ NSIndexSet* makeIS(int idx)
 	}
 	else
 	{
-		DLog(@"done, %i passed, %i failed", self.passCount, self.failCount);
+		DLog(@"%i runs done, %i passed, %i failed", self.numberOfRuns, self.passCount, self.failCount);
 	}
 	
 }

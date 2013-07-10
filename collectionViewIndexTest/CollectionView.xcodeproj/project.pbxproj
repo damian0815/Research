@@ -276,8 +276,10 @@
 		53C4ED50159E740D0019285D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "CollectionView/CollectionView-Prefix.pch";
+				GCC_WARN_SIGN_COMPARE = YES;
 				INFOPLIST_FILE = "CollectionView/CollectionView-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -289,8 +291,10 @@
 		53C4ED51159E740D0019285D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "CollectionView/CollectionView-Prefix.pch";
+				GCC_WARN_SIGN_COMPARE = YES;
 				INFOPLIST_FILE = "CollectionView/CollectionView-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
