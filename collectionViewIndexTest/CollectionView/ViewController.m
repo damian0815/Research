@@ -220,6 +220,7 @@ NSIndexSet* makeIS(int idx)
 	{
 		//if ( moveFrom<moveTo )
 			actualMoveTo = [titles indexOfObject:itemToMove];
+
 		//else
 		//	actualMoveTo = moveTo;
 //		actualMoveTo = moveTo;

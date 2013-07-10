@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		2D643CCC178BF98B00502123 /* NEIndexSetCoalescer.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D643CCB178BF98B00502123 /* NEIndexSetCoalescer.m */; };
 		2DA25F20178D45F200E436BF /* Header.m in Sources */ = {isa = PBXBuildFile; fileRef = 2DA25F1F178D45F200E436BF /* Header.m */; };
+		2DA25F23178DEE6900E436BF /* NEArrayChangeCalculator.m in Sources */ = {isa = PBXBuildFile; fileRef = 2DA25F22178DEE6900E436BF /* NEArrayChangeCalculator.m */; };
 		53113E7D159E787A00E1FBC5 /* DetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 53113E7C159E787A00E1FBC5 /* DetailViewController.m */; };
 		5349A0761607846D002E2F9E /* Default@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 5349A0751607846D002E2F9E /* Default@2x.png */; };
 		5349A07A16078563002E2F9E /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 5349A07816078563002E2F9E /* Default-568h@2x.png */; };
@@ -31,6 +32,8 @@
 		2D643CCB178BF98B00502123 /* NEIndexSetCoalescer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NEIndexSetCoalescer.m; sourceTree = SOURCE_ROOT; };
 		2DA25F1E178D45F200E436BF /* Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Header.h; sourceTree = "<group>"; };
 		2DA25F1F178D45F200E436BF /* Header.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Header.m; sourceTree = "<group>"; };
+		2DA25F21178DEE6900E436BF /* NEArrayChangeCalculator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NEArrayChangeCalculator.h; sourceTree = "<group>"; };
+		2DA25F22178DEE6900E436BF /* NEArrayChangeCalculator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NEArrayChangeCalculator.m; sourceTree = "<group>"; };
 		53113E7B159E787A00E1FBC5 /* DetailViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DetailViewController.h; sourceTree = "<group>"; };
 		53113E7C159E787A00E1FBC5 /* DetailViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DetailViewController.m; sourceTree = "<group>"; };
 		5349A0751607846D002E2F9E /* Default@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Default@2x.png"; path = "images/Default@2x.png"; sourceTree = "<group>"; };
@@ -73,6 +76,8 @@
 		53C4ED26159E740C0019285D = {
 			isa = PBXGroup;
 			children = (
+				2DA25F21178DEE6900E436BF /* NEArrayChangeCalculator.h */,
+				2DA25F22178DEE6900E436BF /* NEArrayChangeCalculator.m */,
 				53C4ED3B159E740C0019285D /* CollectionView */,
 				53C4ED34159E740C0019285D /* Frameworks */,
 				53C4ED32159E740C0019285D /* Products */,
@@ -209,6 +214,7 @@
 				53E25AA115A399EC0004F894 /* CustomCellBackground.m in Sources */,
 				2D643CCC178BF98B00502123 /* NEIndexSetCoalescer.m in Sources */,
 				2DA25F20178D45F200E436BF /* Header.m in Sources */,
+				2DA25F23178DEE6900E436BF /* NEArrayChangeCalculator.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

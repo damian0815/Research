@@ -249,7 +249,7 @@
 			{
 				if ( self.moveFrom < self.moveTo )
 				{
-					self.moveTo += nextNewRange.length;
+					self.moveTo = self.moveTo+(int)nextNewRange.length;
 					DLog(@"moveTo is now %i", self.moveTo);
 				}
 			}
@@ -266,7 +266,7 @@
 			{
 				if ( self.moveFrom < self.moveTo )
 				{
-					self.moveTo -= nextNewRange.length;
+					self.moveTo = self.moveTo-(int)nextNewRange.length;
 					DLog(@"moveTo is now %i", self.moveTo);
 				}
 				/*if ( self.moveTo<0 )
@@ -310,10 +310,13 @@
 		[parsedRemovals addIndexesInRange:range];
 	};
 	
-	
 	for ( unsigned int i=0; i<self.stupidArray.count; i++ )
 	{
-
+		if ( needsAccountForMoveTo && self.moveTo<(int)i )
+		{
+			offset -= 1;
+			needsAccountForMoveTo = NO;
+		}
 		
 		NSObject* o = [self.stupidArray objectAtIndex:i];
 		if ( [o isKindOfClass:[NSNumber class]] )
@@ -341,11 +344,7 @@
 					offset += 1;
 					needsAccountForMoveFrom = NO;
 				}
-				if ( needsAccountForMoveTo && self.moveTo<(int)i )
-				{
-					offset -= 1;
-					needsAccountForMoveTo = NO;
-				}
+
 			}
 			/*
 			else if ( self.moveTo<=self.moveFrom)
@@ -398,9 +397,30 @@
 		 */
 	
 	}
-	if ( offset!=0 )
+	
+	if ( needsAccountForMoveFrom )
 	{
-		if ( self.moveTo>self.moveFrom )
+		if ( lastSeenValue==self.moveFrom )
+		{
+			// offset = 0;
+		}
+		else if ( lastSeenValue<self.moveFrom )
+		{
+			offset += 1;
+		}
+		else
+		{
+			NSAssert(NO, @"what are you doing here?");
+		}
+	}
+	if ( needsAccountForMoveTo )
+	{
+		//NSAssert(NO, @"Foailure: deleted the moveTo!");
+		NSAssert(offset==1, @"Failure: unexpected offset");
+		offset -= 1; // ie offset = 0
+	}
+		
+/*		if ( self.moveTo>self.moveFrom )
 		{
 			//NSAssert( (int)self.stupidArray.count==(self.moveTo+1), @"Failure: looks like we removed the target");
 			DLog(@"moveTo>moveFrom, setting offset from %i to 0 (lastSeenValue %i, self.moveFrom %i)", offset, lastSeenValue, self.moveFrom);
@@ -427,6 +447,7 @@
 		}
 		
 	}
+ */
 	//NSAssert(moveOffset==0, @"Failure: removed the target");
 	
 	if ( lastSeenValue<self.stupidArrayFinalValue )
