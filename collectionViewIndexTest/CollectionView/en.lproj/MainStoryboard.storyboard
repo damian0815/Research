@@ -28,24 +28,21 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" red="0.32986582880434778" green="0.32986582880434778" blue="0.32986582880434778" alpha="1" colorSpace="calibratedRGB"/>
                         <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="v3l-BR-o28">
-                            <size key="itemSize" width="153" height="128"/>
-                            <size key="headerReferenceSize" width="0.0" height="0.0"/>
+                            <size key="itemSize" width="320" height="66"/>
+                            <size key="headerReferenceSize" width="50" height="50"/>
                             <size key="footerReferenceSize" width="0.0" height="0.0"/>
                             <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                         </collectionViewFlowLayout>
                         <cells>
                             <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="cellID" id="85c-5p-sGb" customClass="Cell">
-                                <rect key="frame" x="0.0" y="0.0" width="153" height="128"/>
+                                <rect key="frame" x="0.0" y="50" width="320" height="66"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
-                                    <rect key="frame" x="0.0" y="0.0" width="153" height="128"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="66"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="cell" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9IX-OE-Trn">
                                             <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                            <constraints>
-                                                <constraint firstAttribute="height" constant="127" id="JRd-3U-T8g"/>
-                                            </constraints>
                                             <fontDescription key="fontDescription" type="boldSystem" pointSize="64"/>
                                             <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                             <nil key="highlightedColor"/>
@@ -55,9 +52,10 @@
                                 </view>
                                 <color key="backgroundColor" cocoaTouchSystemColor="darkTextColor"/>
                                 <constraints>
-                                    <constraint firstItem="9IX-OE-Trn" firstAttribute="trailing" secondItem="85c-5p-sGb" secondAttribute="trailing" type="default" id="63V-js-Fr3"/>
-                                    <constraint firstItem="9IX-OE-Trn" firstAttribute="leading" secondItem="85c-5p-sGb" secondAttribute="leading" type="default" id="lGC-Ad-iia"/>
-                                    <constraint firstItem="9IX-OE-Trn" firstAttribute="top" secondItem="85c-5p-sGb" secondAttribute="top" type="default" id="ps7-KL-Dkv"/>
+                                    <constraint firstItem="9IX-OE-Trn" firstAttribute="bottom" secondItem="85c-5p-sGb" secondAttribute="bottom" type="default" id="4ub-EM-z6q"/>
+                                    <constraint firstItem="9IX-OE-Trn" firstAttribute="top" secondItem="85c-5p-sGb" secondAttribute="top" type="default" id="8BL-TG-ssN"/>
+                                    <constraint firstItem="9IX-OE-Trn" firstAttribute="leading" secondItem="85c-5p-sGb" secondAttribute="leading" type="default" id="LaU-7l-c7o"/>
+                                    <constraint firstItem="9IX-OE-Trn" firstAttribute="trailing" secondItem="85c-5p-sGb" secondAttribute="trailing" type="default" id="LmO-TC-jjA"/>
                                 </constraints>
                                 <connections>
                                     <outlet property="label" destination="9IX-OE-Trn" id="DZ5-WF-dqy"/>
@@ -65,6 +63,28 @@
                                 </connections>
                             </collectionViewCell>
                         </cells>
+                        <collectionReusableView key="sectionHeaderView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="headerID" id="l3f-mX-lT5" customClass="Header">
+                            <rect key="frame" x="0.0" y="0.0" width="320" height="50"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                            <subviews>
+                                <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="Label" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" preferredMaxLayoutWidth="310" translatesAutoresizingMaskIntoConstraints="NO" id="p9g-Ct-ty9">
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="40" id="Epn-sL-LF1"/>
+                                        <constraint firstAttribute="width" constant="310" id="jGj-Ku-A8i"/>
+                                    </constraints>
+                                    <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                    <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                    <nil key="highlightedColor"/>
+                                </label>
+                            </subviews>
+                            <constraints>
+                                <constraint firstItem="p9g-Ct-ty9" firstAttribute="centerX" secondItem="l3f-mX-lT5" secondAttribute="centerX" type="default" id="Kma-5M-muY"/>
+                                <constraint firstItem="p9g-Ct-ty9" firstAttribute="centerY" secondItem="l3f-mX-lT5" secondAttribute="centerY" type="default" id="nXE-Aa-byR"/>
+                            </constraints>
+                            <connections>
+                                <outlet property="label" destination="p9g-Ct-ty9" id="Zvk-8b-iRO"/>
+                            </connections>
+                        </collectionReusableView>
                         <connections>
                             <outlet property="dataSource" destination="dmE-Kn-TpH" id="c0f-gq-Hbq"/>
                             <outlet property="delegate" destination="dmE-Kn-TpH" id="pKl-zO-lPR"/>

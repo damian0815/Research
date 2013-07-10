@@ -51,5 +51,7 @@
 @interface ViewController : UICollectionViewController
 
 @property (atomic,readwrite,strong) NSArray* titles;
+@property (weak, nonatomic) UILabel *headerLabel;
+
 
 @end

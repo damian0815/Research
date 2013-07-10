@@ -10,12 +10,17 @@
 
 @interface NEIndexSetCoalescer: NSObject
 
-@property (readonly,nonatomic) NSMutableIndexSet* coalescedAdds;
-@property (readonly,nonatomic) NSMutableIndexSet* coalescedRemoves;
+@property (readonly,atomic) NSIndexSet* coalescedAdds;
+@property (readonly,atomic) NSIndexSet* coalescedRemoves;
 
 + (NEIndexSetCoalescer*)indexSetCoalescerWithAdds:(NSIndexSet*)adds removes:(NSIndexSet*)removes;
 
+- (NSString*)longDescription;
+
 - (void)reset;
+- (BOOL)isEmpty;
+
 - (void)coalesceAdds:(NSIndexSet*)newAdded removes:(NSIndexSet*)newRemoved;
+- (void)coalesceMoveFrom:(unsigned int)from to:(unsigned int)to;
 
 @end

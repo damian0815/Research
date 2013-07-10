@@ -50,24 +50,126 @@
 #import "DetailViewController.h"
 #import "Cell.h"
 #import "NEIndexSetCoalescer.h"
+#import "Header.h"
 
 NSString *kDetailedViewControllerID = @"DetailView";    // view controller storyboard id
 NSString *kCellID = @"cellID";                          // UICollectionViewCell storyboard id
+NSString *kHeaderID = @"headerID";
 
 @implementation ViewController
 
+NSIndexPath* makeIP(int idx)
+{
+	return [NSIndexPath indexPathForItem:idx inSection:0];
+}
+
+NSIndexSet* makeIS(int idx)
+{
+	return [NSIndexSet indexSetWithIndex:idx];
+}
+
+- (NSArray*)initialArrayContents
+{
+	return @[@"A", @"s1", @"B", @"C"];
+}
+- (void)updateLabel
+{
+	NSString* labelString = @"";
+	for ( NSString* str in self.titles )
+	{
+		labelString = [labelString stringByAppendingFormat:@"%@ ", str];
+	}
+	[self.headerLabel setText:labelString];
+}
+
+- (void)doIndexSetCoalescerTest
+{
+	NSMutableArray* titles = [self.titles mutableCopy];
+	
+	NSString* itemToMove = @"A";
+	unsigned int moveFrom = [titles indexOfObject:itemToMove];
+	unsigned int moveTo = 3;
+	NEIndexSetCoalescer* coalescer = [[NEIndexSetCoalescer alloc] init];
+	
+	if ( moveFrom != moveTo )
+	{
+		NSObject* obj = [titles objectAtIndex:moveFrom];
+		[titles removeObjectAtIndex:moveFrom];
+		[titles insertObject:obj atIndex:moveTo];
+
+		DLog(@"after move: %@", titles);
+		//[coalescer coalesceAdds:makeIS(actualTarget) removes:makeIS(moveFrom)];
+		/*
+		int actualTarget = moveTo;
+		if ( moveFrom<moveTo )
+			actualTarget++;	*/
+		[coalescer coalesceMoveFrom:moveFrom to:moveTo];
+	}
+	
+	
+	
+	NSMutableIndexSet* newSpacerIndices = [[NSMutableIndexSet alloc] init];
+	[newSpacerIndices addIndex:0];
+	[newSpacerIndices addIndex:2];
+	[newSpacerIndices addIndex:4];
+	NSArray* newSpacers = @[@"s0", @"s2", @"s3"];
+	[titles insertObjects:newSpacers atIndexes:newSpacerIndices];
+	[coalescer coalesceAdds:newSpacerIndices removes:nil];
+	
+	//NSAssert([coalescer.coalescedAdds isEqual:newSpacerIndices], @"Failure: sets differ");
+	
+	DLog(@"before delete: %@ %@", titles, [coalescer longDescription]);
+	NSMutableIndexSet* removedIndices = [[NSMutableIndexSet alloc] init];
+	// remove A C
+	[removedIndices addIndex:1];
+	[removedIndices addIndex:5];
+	[titles removeObjectsAtIndexes:removedIndices];
+	[coalescer coalesceAdds:nil removes:removedIndices];
+	
+	NSMutableArray* adds = [NSMutableArray array];
+	NSMutableArray* removes = [NSMutableArray array];
+	[coalescer.coalescedAdds enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+		[adds addObject:makeIP(idx)];
+	}];
+	[coalescer.coalescedRemoves enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+		[removes addObject:makeIP(idx)];
+	}];
+	
+	self.titles = titles;
+	unsigned int actualMoveTo = [titles indexOfObject:itemToMove];
+	[self.collectionView performBatchUpdates:^{
+		
+		
+		DLog(@"moving %i to %i and doing coalescer: %@", moveFrom, actualMoveTo, coalescer);
+		
+		if ( moveFrom!=actualMoveTo && actualMoveTo!=NSNotFound )
+			[self.collectionView moveItemAtIndexPath:makeIP(moveFrom) toIndexPath:makeIP(actualMoveTo)];
+			
+		if ( adds.count )
+			[self.collectionView insertItemsAtIndexPaths:adds];
+		
+		if ( removes.count )
+			[self.collectionView deleteItemsAtIndexPaths:removes];
+		//[self.collectionView deleteItemsAtIndexPaths:@[makeIP(1), makeIP(3)]];
+///		[self.collectionView deleteItemsAtIndexPaths:@[makeIP(0)]];
+		
+		
+		
+	} completion:^(BOOL finished) {
+		
+		[self updateLabel];
+		
+	}];
+	
+}
+
 - (void)viewDidLoad
 {
-	self.titles = @[@"A", @"B", @"C"];
+	self.titles = [self initialArrayContents];
 	[self.collectionView reloadData];
+	[self updateLabel];
 	
-	NSIndexPath* (^makeIP)(int idx) = ^(int idx) {
-		return [NSIndexPath indexPathForItem:idx inSection:0];
-	};
-	NSIndexSet* (^makeIS)(int idx) = ^(int idx) {
-		return [NSIndexSet indexSetWithIndex:idx];
-	};
-	
+
 	double delayInSeconds = 1.9;
 	dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
 	dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
@@ -77,6 +179,9 @@ NSString *kCellID = @"cellID";                          // UICollectionViewCell 
 	delayInSeconds = 2.0;
 	popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
 	dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+		
+		[self doIndexSetCoalescerTest];
+		return;
 		
 		self.titles = @[@"C", @"D", @"A"];
 		
@@ -144,6 +249,16 @@ NSString *kCellID = @"cellID";                          // UICollectionViewCell 
 	}
 }
 
+
+- (UICollectionReusableView*)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath
+{
+	Header* header = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:kHeaderID forIndexPath:indexPath];
+	
+	self.headerLabel = header.label;
+	[self updateLabel];
+	
+	return header;
+}
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)cv cellForItemAtIndexPath:(NSIndexPath *)indexPath;
 {

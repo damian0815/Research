@@ -10,11 +10,15 @@
 @interface NEIndexSetCoalescer()
 
 
-@property (strong,readwrite,nonatomic) NSMutableIndexSet* coalescedAdds;
-@property (strong,readwrite,nonatomic) NSMutableIndexSet* coalescedRemoves;
+@property (strong,readwrite,atomic) NSMutableIndexSet* coalescedAddsInternal;
+@property (strong,readwrite,atomic) NSMutableIndexSet* coalescedRemovesInternal;
 
 @property (strong,readwrite,atomic) NSMutableArray* stupidArray;
 @property (assign,readwrite,atomic) int stupidArrayFinalValue;
+
+@property (assign,readwrite,atomic) unsigned int moveFrom;
+@property (assign,readwrite,atomic) unsigned int moveTo;
+
 
 @end
 
@@ -39,7 +43,15 @@
 
 - (NSString*)description
 {
-	return [NSString stringWithFormat:@"<%@: 0x%x> added: %@ ::: removed: %@", [self class], (unsigned int)self, self.coalescedAdds, self.coalescedRemoves];
+	if ( [self isEmpty] )
+		return [NSString stringWithFormat:@"%@ (empty)", [super description]];
+	else
+		return [NSString stringWithFormat:@"%@ added: %@, removed: %@", [super description], self.coalescedAdds, self.coalescedRemoves];
+}
+
+- (NSString*)longDescription
+{
+	return [NSString stringWithFormat:@"%@ added: %@  removed:\n%@   array contents %@ final value: %i", [super description], self.coalescedAdds, self.coalescedRemoves, self.stupidArray, self.stupidArrayFinalValue];
 }
 
 - (NSMutableArray*)sortedArrayOfRangesInIndexSet:(NSIndexSet*)set
@@ -93,12 +105,41 @@
 
 - (void)reset
 {
-	self.coalescedRemoves = [NSMutableIndexSet indexSet];
-	self.coalescedAdds = [NSMutableIndexSet indexSet];
+	self.coalescedRemovesInternal = [NSMutableIndexSet indexSet];
+	self.coalescedAddsInternal = [NSMutableIndexSet indexSet];
 	self.stupidArray = [NSMutableArray array];
 	self.stupidArrayFinalValue = -1;
+	self.moveFrom = NSNotFound;
+	self.moveTo = NSNotFound;
 }
 
+- (BOOL)isEmpty
+{
+	return (self.coalescedAddsInternal.count==0) && (self.coalescedAddsInternal.count==0) && (self.stupidArrayFinalValue==-1);
+}
+
+- (NSIndexSet*)coalescedAdds
+{
+	return self.coalescedAddsInternal;
+}
+
+- (NSIndexSet*)coalescedRemoves
+{
+	return self.coalescedRemovesInternal;
+}
+
+
+- (void)coalesceMoveFrom:(unsigned int)from to:(unsigned int)to
+{
+	NSAssert(self.moveFrom==NSNotFound, @"Failure: can only handle 1 move");
+	/*if ( from>to )
+		from++;*/
+	self.moveFrom = from;
+	self.moveTo = to;
+	[self populateStupidArrayToSize:MAX(self.moveFrom+1,self.moveTo+1)];
+	// update output arrays
+	[self coalesceAdds:nil removes:nil];
+}
 
 - (void)coalesceAdds:(NSIndexSet*)newAdded removes:(NSIndexSet*)newRemoved
 {
@@ -110,6 +151,10 @@
 	
 	// go
 	[self stupidCoalesceAdds:newAdded removes:newRemoved];
+	if ( [self isEmpty] )
+		DLog(@"coalesced to empty");
+	else
+		DLog(@"coalesced to %@", [self longDescription]);
 }
 
 - (void)populateStupidArrayToSize:(unsigned int)requestedSize
@@ -141,23 +186,10 @@
 	NSMutableArray* newRemovedArray = [self sortedArrayOfRangesInIndexSet:newRemoved];
 	
 	
-	// find the last index in newAdded/newRemoved
-	unsigned int requiredSize = 0;
-	if ( newAddedArray.count )
-	{
-		NSRange lastRange = [[newAddedArray lastObject] rangeValue];
-		requiredSize = MAX(requiredSize,lastRange.location);
-	}
-	if ( newRemovedArray.count )
-	{
-		NSRange lastRange = [[newRemovedArray lastObject] rangeValue];
-		requiredSize = MAX(requiredSize,NSMaxRange(lastRange));
-	}
-	[self populateStupidArrayToSize:requiredSize+1];
-
-	
 	// apply the changes
 	int offset = 0;
+	BOOL needsAccountForMoveFrom = (self.moveFrom != NSNotFound);
+	BOOL needsAccountForMoveTo = (self.moveTo != NSNotFound);
 	while ( newAddedArray.count || newRemovedArray.count )
 	{
 		// find first of newAddedArray[0], newRemovedArray[0]
@@ -179,6 +211,21 @@
 		NSRange nextNewRange = [[firstOfNew objectAtIndex:0] rangeValue];
 		[firstOfNew removeObjectAtIndex:0];
 		
+		if ( firstOfNew == newAddedArray )
+		{
+			if ( nextNewRange.location>self.stupidArray.count )
+			{
+				[self populateStupidArrayToSize:nextNewRange.location];
+			}
+		}
+		else
+		{
+			if ( NSMaxRange(nextNewRange)>=self.stupidArray.count )
+			{
+				[self populateStupidArrayToSize:NSMaxRange(nextNewRange)];
+			}
+		}
+	
 		// adjust the location by the offset
 		int offsettedLocation = ((int)nextNewRange.location + offset);
 		NSAssert(offsettedLocation>=0, @"Failure: the offsetting broke");
@@ -187,22 +234,29 @@
 		// apply the newly added indices
 		if ( firstOfNew == newAddedArray )
 		{
-			// enumerate the range
-			NSAssert(nextNewRange.location<=self.stupidArray.count, @"nextNewRange out of bounds");
+
 			//NSLog(@"   inserting %@", NSStringFromRange(nextNewRange));
 			NSIndexSet* nextNewIndexSet = [NSIndexSet indexSetWithIndexesInRange:nextNewRange];
 			[nextNewIndexSet enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop)
 			 {
 				 [self.stupidArray insertObject:@"*" atIndex:idx];
 			 }];
-			offset += nextNewRange.length;
+			//offset += nextNewRange.length;
+			if ( nextNewRange.location<self.moveTo )
+				self.moveTo += nextNewRange.length;
+			
 		}
-		else
+		else // removed
 		{
-			NSAssert(NSMaxRange(nextNewRange)<=self.stupidArray.count, @"nextNewRange out of bounds");
+
 			//NSLog(@"   removing %@", NSStringFromRange(nextNewRange));
 			[self.stupidArray removeObjectsInRange:nextNewRange];
 			offset -= nextNewRange.length;
+			
+			
+			if ( nextNewRange.location<self.moveTo )
+				self.moveTo -= nextNewRange.length;
+			
 		}
 		
 		
@@ -210,45 +264,105 @@
 		
 	}
 	
+	DLog(@"resulting move: %i to %i", self.moveFrom, self.moveTo);
+	
 	//NSLog(@"done; resulting stupid %@", self.stupidArray);
 	
 	// parse stupid array to build indices
+	__block int moveOffset = 0;
 	NSMutableIndexSet* parsedInsertions = [NSMutableIndexSet indexSet];;
 	NSMutableIndexSet* parsedRemovals = [NSMutableIndexSet indexSet];
 	int insertedCount = 0;
 	int expectedIndex = 0;
 	int lastSeenValue = -1;
+	int insertionStartActualIndex = -1;
+	
+	void (^addInsertion)(unsigned int start,unsigned int length) = ^(unsigned int start, unsigned int length)
+	{
+		NSRange range = NSMakeRange((unsigned int)((int)start), length);
+		[parsedInsertions addIndexesInRange:range];
+	};
+	void (^addDeletion)(unsigned int start,unsigned int length) = ^(unsigned int start, unsigned int length)
+	{
+		NSRange range = NSMakeRange((unsigned int)((int)start+moveOffset), length);
+		[parsedRemovals addIndexesInRange:range];
+	};
+	
+	
 	for ( unsigned int i=0; i<self.stupidArray.count; i++ )
 	{
+
+		if ( self.moveTo>self.moveFrom )
+		{
+			// account for move, if necessary
+			if ( needsAccountForMoveFrom && self.moveFrom<=i  )
+			{
+				moveOffset += 1;
+				needsAccountForMoveFrom = NO;
+			}
+			if ( needsAccountForMoveTo && self.moveTo<i )
+			{
+				moveOffset -= 1;
+				needsAccountForMoveTo = NO;
+			}
+		}
+		else
+		{
+			NSAssert(NO, @"Failure: not tested");
+		}
+			
 		NSObject* o = [self.stupidArray objectAtIndex:i];
 		if ( [o isKindOfClass:[NSNumber class]] )
 		{
+		
 			// found a number, what is it?
 			if ( insertedCount>0 )
 			{
-				// some stuff was inserted at expectedIndex
-				NSRange range = NSMakeRange((unsigned int)expectedIndex, (unsigned int)insertedCount);
-				[parsedInsertions addIndexesInRange:range];
+				// some stuff was inserted at i
+				addInsertion(insertionStartActualIndex,insertedCount);
+				/*NSRange range = NSMakeRange((unsigned int)insertionStartActualIndex+moveOffset, (unsigned int)insertedCount);
+				[parsedInsertions addIndexesInRange:range];*/
 				insertedCount = 0;
 			}
 			
+		
 			int foundIndex = [(NSNumber*)o intValue];
 			if ( foundIndex>expectedIndex )
 			{
 				// some stuff was removed
-				NSRange range = NSMakeRange((unsigned int)expectedIndex, (unsigned int)(foundIndex-expectedIndex));
-				[parsedRemovals addIndexesInRange:range];
+				addDeletion(expectedIndex, (unsigned int)(foundIndex-expectedIndex));
+				/*NSRange range = NSMakeRange((unsigned int)expectedIndex+moveOffset, (unsigned int)(foundIndex-expectedIndex));
+				[parsedRemovals addIndexesInRange:range];*/
 			}
 
+			
 			// next
 			expectedIndex = foundIndex+1;
 			lastSeenValue = foundIndex;
 		}
 		else
 		{
+			if ( insertedCount==0 )
+				insertionStartActualIndex = i;
 			insertedCount++;
 		}
+
+		
+		// doing this here:
+		/*
+		// account for move, if necessary
+		if ( needsAccountForMoveFrom && self.moveFrom<i  )
+		{
+			moveOffset += 1;
+			needsAccountForMoveFrom = NO;
+		}
+		 is the same as doing <=i at the top of the next loop
+		 */
+	
 	}
+	
+	//NSAssert(moveOffset==0, @"Failure: removed the target");
+	
 	if ( lastSeenValue<self.stupidArrayFinalValue )
 	{
 		// stuff was deleted from the end
@@ -256,9 +370,13 @@
 		// the end might also be the start (ie, nothing is left)
 		if ( lastSeenValue>=0 )
 			removeStartIndex = (unsigned int)lastSeenValue+1;
+/*		int foundIndex =
+		int expectedIndex =*/
 		int removedCount = self.stupidArrayFinalValue-lastSeenValue;
+		addDeletion(removeStartIndex,(unsigned int)removedCount);
+	/*
 		NSRange range = NSMakeRange(removeStartIndex, (unsigned int)removedCount);
-		[parsedRemovals addIndexesInRange:range];
+		[parsedRemovals addIndexesInRange:range];*/
 	}
 	// note, shouldn't update the stupidArrayFinalValue as we still want to know when extra items at the end are deleted
 	// -- in other words, stupidArrayFinalValue should only be updated 
@@ -266,12 +384,14 @@
 	if ( insertedCount )
 	{
 		// stuff was inserted at the end
-		NSRange range = NSMakeRange((unsigned int)expectedIndex, (unsigned int)insertedCount);
-		[parsedInsertions addIndexesInRange:range];
+		addInsertion(insertionStartActualIndex,insertedCount);
+		/*
+		NSRange range = NSMakeRange((unsigned int)insertionStartActualIndex+moveOffset, (unsigned int)insertedCount);
+		[parsedInsertions addIndexesInRange:range];*/
 	}
 	
-	self.coalescedAdds = parsedInsertions;
-	self.coalescedRemoves = parsedRemovals;
+	self.coalescedAddsInternal = parsedInsertions;
+	self.coalescedRemovesInternal = parsedRemovals;
 	
 	NSLog(@"Coalesce took added %@ and removed %@ to end with %@, result adds %@ removes %@", newAdded, newRemoved, self.stupidArray, self.coalescedAdds, self.coalescedRemoves );
 }
