@@ -331,9 +331,9 @@
 			
 		
 			int foundIndex = [(NSNumber*)o intValue];
-			if ( self.moveTo>self.moveFrom )
+			if ( /*self.moveTo>self.moveFrom*/YES )
 			{
-				DLog(@"moveTo > moveFrom");
+				//DLog(@"moveTo  moveFrom");
 				// account for move, if necessary
 				if ( needsAccountForMoveFrom && foundIndex>self.moveFrom )
 					//if ( needsAccountForMoveFrom && self.moveFrom<(int)i  )
@@ -347,7 +347,8 @@
 					needsAccountForMoveTo = NO;
 				}
 			}
-			else if ( self.moveTo<self.moveFrom)
+			/*
+			else if ( self.moveTo<=self.moveFrom)
 			{
 				DLog(@"moveTo < moveFrom");
 				// account for move, if necessary
@@ -362,7 +363,7 @@
 					offset -= 1;
 					needsAccountForMoveTo = NO;
 				}
-			}
+			}*/
 			
 			if ( foundIndex>expectedIndex )
 			{
@@ -402,13 +403,13 @@
 		if ( self.moveTo>self.moveFrom )
 		{
 			//NSAssert( (int)self.stupidArray.count==(self.moveTo+1), @"Failure: looks like we removed the target");
-			DLog(@"setting offset from %i to 0", offset);
+			DLog(@"moveTo>moveFrom, setting offset from %i to 0", offset);
 			offset = 0;
 		}
 		else if ( self.moveTo<self.moveFrom )
 		{
 			//NSAssert( lastSeenValue==self.moveFrom, @"Failure: looks like we removed the target");
-			DLog(@"*not* setting offset from %i to 0", offset);
+			DLog(@"moveTo<moveFrom, *not* setting offset from %i to 0", offset);
 			//offset = 0;
 		}
 		else
