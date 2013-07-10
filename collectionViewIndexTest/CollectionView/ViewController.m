@@ -176,7 +176,7 @@ NSIndexSet* makeIS(int idx)
 	int insertionCount = rand()%3;
 	for ( int i=0; i<insertionCount; i++ )
 	{
-		int index = rand()%(self.titles.count+i+1);
+		int index = rand()%(titles.count+1);
 		if ( [insertions containsIndex:index] )
 			// try again
 			i--;
@@ -195,17 +195,20 @@ NSIndexSet* makeIS(int idx)
 	int removeCount = /*rand()%3*/1;
 	for ( int i=0; i<removeCount; i++ )
 	{
-		int idx = NSNotFound;
+		unsigned int idx = NSNotFound;
 		NSString* item = itemToMove;
-		while ( item==itemToMove )
+		while ( item == itemToMove )
 		{
 			// don't remove the item we moved
-			idx = rand()%(self.titles.count);
-			item = [self.titles objectAtIndex:idx];
+			idx = (unsigned int)rand()%(titles.count);
+			item = [titles objectAtIndex:idx];
 		}
+		DLog(@"removing item at %i (%@, we have moved %@)", idx, item, itemToMove);
 		[removes addIndex:idx];
 	}
+	DLog(@"before erase: %@", [self stringFromArray:titles]);
 	[titles removeObjectsAtIndexes:removes];
+	DLog(@"after erase : %@", [self stringFromArray:titles]);
 	[coalescer coalesceAdds:nil removes:removes];
 	
 	
@@ -220,6 +223,7 @@ NSIndexSet* makeIS(int idx)
 		//else
 		//	actualMoveTo = moveTo;
 //		actualMoveTo = moveTo;
+		NSAssert(actualMoveTo!=NSNotFound, @"Failure: we deleted the moved item");
 	}
 	
 	NSMutableArray* addsArray = [NSMutableArray array];
@@ -234,7 +238,7 @@ NSIndexSet* makeIS(int idx)
 	// update the data source
 	self.titles = titles;
 	DLog(@"****** started with %@", [self stringFromArray:[self initialArrayContents]]);
-	DLog(@"******   ended with %@", [self stringFromArray:self.titles]);
+	DLog(@"******   ended with %@", [self stringFromArray:titles]);
 	[self.collectionView performBatchUpdates:^{
 		DLog(@"moving %i to %i (was: %i) and doing coalescer: %@", moveFrom, actualMoveTo, moveTo, coalescer);
 		

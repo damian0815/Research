@@ -314,37 +314,7 @@
 	for ( unsigned int i=0; i<self.stupidArray.count; i++ )
 	{
 
-		if ( self.moveTo>self.moveFrom )
-		{
-			DLog(@"moveTo > moveFrom");
-			// account for move, if necessary
-			if ( needsAccountForMoveFrom && self.moveFrom<(int)i  )
-			{
-				offset += 1;
-				needsAccountForMoveFrom = NO;
-			}
-			if ( needsAccountForMoveTo && self.moveTo<(int)i )
-			{
-				offset -= 1;
-				needsAccountForMoveTo = NO;
-			}
-		}
-		else if ( self.moveTo<self.moveFrom)
-		{
-			DLog(@"moveTo < moveFrom");
-			// account for move, if necessary
-			if ( needsAccountForMoveFrom && self.moveFrom<(int)i  )
-			{
-				offset += 1;
-				needsAccountForMoveFrom = NO;
-			}
-			if ( needsAccountForMoveTo && self.moveTo<(int)i )
-			{
-				offset -= 1;
-				needsAccountForMoveTo = NO;
-			}
-		}
-			
+		
 		NSObject* o = [self.stupidArray objectAtIndex:i];
 		if ( [o isKindOfClass:[NSNumber class]] )
 		{
@@ -361,6 +331,39 @@
 			
 		
 			int foundIndex = [(NSNumber*)o intValue];
+			if ( self.moveTo>self.moveFrom )
+			{
+				DLog(@"moveTo > moveFrom");
+				// account for move, if necessary
+				if ( needsAccountForMoveFrom && foundIndex>self.moveFrom )
+					//if ( needsAccountForMoveFrom && self.moveFrom<(int)i  )
+				{
+					offset += 1;
+					needsAccountForMoveFrom = NO;
+				}
+				if ( needsAccountForMoveTo && self.moveTo<(int)i )
+				{
+					offset -= 1;
+					needsAccountForMoveTo = NO;
+				}
+			}
+			else if ( self.moveTo<self.moveFrom)
+			{
+				DLog(@"moveTo < moveFrom");
+				// account for move, if necessary
+				if ( needsAccountForMoveFrom && foundIndex>self.moveFrom )
+					//if ( needsAccountForMoveFrom && (self.moveFrom+1)<(int)i  )
+				{
+					offset += 1;
+					needsAccountForMoveFrom = NO;
+				}
+				if ( needsAccountForMoveTo && self.moveTo<=(int)i )
+				{
+					offset -= 1;
+					needsAccountForMoveTo = NO;
+				}
+			}
+			
 			if ( foundIndex>expectedIndex )
 			{
 				// some stuff was removed
@@ -398,13 +401,21 @@
 	{
 		if ( self.moveTo>self.moveFrom )
 		{
-			NSAssert( (int)self.stupidArray.count==(self.moveTo+1), @"Failure: looks like we removed the target");
+			//NSAssert( (int)self.stupidArray.count==(self.moveTo+1), @"Failure: looks like we removed the target");
+			DLog(@"setting offset from %i to 0", offset);
+			offset = 0;
+		}
+		else if ( self.moveTo<self.moveFrom )
+		{
+			//NSAssert( lastSeenValue==self.moveFrom, @"Failure: looks like we removed the target");
+			DLog(@"*not* setting offset from %i to 0", offset);
+			//offset = 0;
 		}
 		else
 		{
-			NSAssert( (int)self.stupidArray.count==(self.moveFrom+1), @"Failure: looks like we removed the target");
+			NSAssert(NO, @"not handling this case");
 		}
-		offset = 0;
+		
 	}
 	//NSAssert(moveOffset==0, @"Failure: removed the target");
 	
