@@ -56,6 +56,14 @@ NSString *kDetailedViewControllerID = @"DetailView";    // view controller story
 NSString *kCellID = @"cellID";                          // UICollectionViewCell storyboard id
 NSString *kHeaderID = @"headerID";
 
+@interface ViewController()
+
+@property (assign,readwrite,atomic) int numberOfRuns;
+@property (assign,readwrite,atomic) int failCount;
+@property (assign,readwrite,atomic) int passCount;
+
+@end
+
 @implementation ViewController
 
 NSIndexPath* makeIP(int idx)
@@ -70,20 +78,227 @@ NSIndexSet* makeIS(int idx)
 
 - (NSArray*)initialArrayContents
 {
-	return @[@"A", @"s1", @"B", @"C"];
+	return @[@"A", @"B", @"C", @"D"];
 }
-- (void)updateLabel
+
+- (NSString*)stringFromArray:(NSArray*)array
 {
 	NSString* labelString = @"";
-	for ( NSString* str in self.titles )
+	for ( NSString* str in array )
 	{
-		labelString = [labelString stringByAppendingFormat:@"%@ ", str];
+		labelString = [labelString stringByAppendingFormat:@"%2s ", [str UTF8String] ];
 	}
+	return labelString;
+}
+
+- (void)updateLabel
+{
+	NSString* labelString = [self stringFromArray:self.titles];
 	[self.headerLabel setText:labelString];
+}
+
+- (NSArray*)visibleCellTitles
+{
+	NSArray* visibleIndexPaths = [self.collectionView indexPathsForVisibleItems];
+	NSArray* visibleCells = [self.collectionView visibleCells];
+	NSMutableArray* cellTitles = [NSMutableArray array];
+	
+	int prevIndexPathIndex = -1;
+	int firstIndex = -1;
+	for ( unsigned int i=0; i<[visibleCells count]; i++ )
+	{
+		// find the next index in visibleIndexPaths
+		
+		// visibleIndexPaths is not sorted, nor is visible cells, aargh
+		unsigned int bestArrayIndex = NSNotFound;
+		int bestIndexPathIndex = NSNotFound;
+		for ( unsigned int j=0; j<[visibleCells count]; j++ )
+		{
+			NSIndexPath* indexPath = [visibleIndexPaths objectAtIndex:j];
+			int indexPathIndex = indexPath.item;
+			if ( indexPathIndex>prevIndexPathIndex && indexPathIndex<(int)bestIndexPathIndex )
+			{
+				bestIndexPathIndex = (int)indexPathIndex;
+				bestArrayIndex = j;
+			}
+		}
+		prevIndexPathIndex = bestIndexPathIndex;
+		
+		if ( firstIndex==-1 )
+			firstIndex = bestIndexPathIndex;
+		
+		NSIndexPath* indexPath = [visibleIndexPaths objectAtIndex:bestArrayIndex];
+		Cell* cell = [visibleCells objectAtIndex:bestArrayIndex];
+		
+		NSString* title = cell.label.text;
+		[cellTitles addObject:title];
+	}
+	
+	// insert dummies
+	if ( firstIndex>0 )
+	{
+		NSMutableArray* dummies = [NSMutableArray array];;
+		for ( int i=0; i<firstIndex; i++ )
+		{
+			[dummies addObject:@"_"];
+			
+		}
+		NSIndexSet* dummyIndexes = [NSMutableIndexSet indexSetWithIndexesInRange:NSMakeRange(0,firstIndex)];
+		[cellTitles insertObjects:dummies atIndexes:dummyIndexes];
+	}
+	
+	return cellTitles;
+	
+}
+
+- (void)doRandomIndexSetCoalescerTest:(int)runIndex
+{
+
+	NSMutableArray* titles = [self.titles mutableCopy];
+	
+	NEIndexSetCoalescer* coalescer = [[NEIndexSetCoalescer alloc] init];
+	int moveFrom = rand()%self.titles.count;
+	int moveTo = rand()%self.titles.count;
+	NSString* itemToMove = nil;
+	if ( moveFrom != moveTo )
+	{
+		itemToMove = [titles objectAtIndex:moveFrom];
+		DLog(@"move %@ at %i to %i", itemToMove, moveFrom, moveTo );
+		[titles removeObjectAtIndex:moveFrom];
+		[titles insertObject:itemToMove atIndex:moveTo];
+		[coalescer coalesceMoveFrom:moveFrom to:moveTo];
+	}
+	
+	NSMutableIndexSet* insertions = [[NSMutableIndexSet alloc] init];
+	NSMutableArray* inserted = [NSMutableArray array];
+	int insertionCount = rand()%3;
+	for ( int i=0; i<insertionCount; i++ )
+	{
+		int index = rand()%(self.titles.count+i+1);
+		if ( [insertions containsIndex:index] )
+			// try again
+			i--;
+		else
+		{
+			[insertions addIndex:index];
+			[inserted addObject:[NSString stringWithFormat:@"s%i",i]];
+		}
+	}
+	[titles insertObjects:inserted atIndexes:insertions];
+	[coalescer coalesceAdds:insertions removes:nil];
+	
+	
+	NSMutableIndexSet* removes = [[NSMutableIndexSet alloc] init];
+	/*
+	int removeCount = rand()%3;
+	for ( int i=0; i<removeCount; i++ )
+	{
+		int idx = NSNotFound;
+		NSString* item = itemToMove;
+		while ( item==itemToMove )
+		{
+			// don't remove the item we moved
+			idx = rand()%(self.titles.count);
+			item = [self.titles objectAtIndex:idx];
+		}
+		[removes addIndex:idx];
+	}
+	[titles removeObjectsAtIndexes:removes];
+	[coalescer coalesceAdds:nil removes:removes];
+	*/
+	
+	
+	
+	DLog(@"insert %@, remove %@", insertions, removes);
+	self.titles = titles;
+	unsigned int actualMoveTo = NSNotFound;
+	if ( itemToMove )
+	{
+		//if ( moveFrom<moveTo )
+			actualMoveTo = [titles indexOfObject:itemToMove];
+		//else
+		//	actualMoveTo = moveTo;
+//		actualMoveTo = moveTo;
+	}
+	
+	NSMutableArray* addsArray = [NSMutableArray array];
+	NSMutableArray* removesArray = [NSMutableArray array];
+	[coalescer.coalescedAdds enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+		[addsArray addObject:makeIP(idx)];
+	}];
+	[coalescer.coalescedRemoves enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+		[removesArray addObject:makeIP(idx)];
+	}];
+	
+	DLog(@"****** started with %@", [self stringFromArray:[self initialArrayContents]]);
+	DLog(@"******   ended with %@", [self stringFromArray:self.titles]);
+	[self.collectionView performBatchUpdates:^{
+		DLog(@"moving %i to %i (was: %i) and doing coalescer: %@", moveFrom, actualMoveTo, moveTo, coalescer);
+		
+		if (/* moveFrom!=actualMoveTo && */actualMoveTo!=NSNotFound )
+			[self.collectionView moveItemAtIndexPath:makeIP(moveFrom) toIndexPath:makeIP(actualMoveTo)];
+			
+		if ( addsArray.count )
+			[self.collectionView insertItemsAtIndexPaths:addsArray];
+		
+		if ( removesArray.count )
+			[self.collectionView deleteItemsAtIndexPaths:removesArray];
+	} completion:^(BOOL finished) {
+		[self updateLabel];
+		//DLog(@"done, need to compare");
+		dispatch_async(dispatch_get_main_queue(), ^()
+					   {
+						   [self compareCellTitlesCreatedForRun:runIndex viaIndexCoalescer:coalescer withActualTitles:titles];
+						   [self doNextRun:runIndex];
+					   });
+	}];
+	
+	
+	
+}
+
+-(void)compareCellTitlesCreatedForRun:(int)runIndex viaIndexCoalescer:(NEIndexSetCoalescer*)coalescer withActualTitles:(NSArray*)actualTitles
+{
+	NSArray* cellTitles = [self visibleCellTitles];
+	
+	if ( ![cellTitles isEqual:actualTitles] )
+	{
+		DLog(@"run %3i: cell titles differ from actual titles", runIndex);
+		DLog(@"  initial state: %@", [self stringFromArray:[self initialArrayContents]]);
+		DLog(@"    final state: %@", [self stringFromArray:actualTitles] );
+		DLog(@"    cell titles: %@", [self stringFromArray:cellTitles] );
+		DLog(@"  coalescer: %@", [coalescer longDescription] );
+		DLog(@"continuing...");
+		self.failCount++;
+	}
+	else
+	{
+		self.passCount++;
+	}
+}
+
+- (void)doNextRun:(int)currentIndex
+{
+	if ( currentIndex<self.numberOfRuns )
+	{
+		currentIndex++;
+		self.titles = [self initialArrayContents];
+		[self.collectionView reloadData];
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self doRandomIndexSetCoalescerTest:currentIndex];
+		});
+	}
+	else
+	{
+		DLog(@"done, %i passed, %i failed", self.passCount, self.failCount);
+	}
+	
 }
 
 - (void)doIndexSetCoalescerTest
 {
+	self.titles = [self initialArrayContents];
+	[self.collectionView reloadData];
 	NSMutableArray* titles = [self.titles mutableCopy];
 	
 	NSString* itemToMove = @"A";
@@ -161,6 +376,7 @@ NSIndexSet* makeIS(int idx)
 		
 		[self updateLabel];
 		
+		
 	}];
 	
 }
@@ -178,11 +394,14 @@ NSIndexSet* makeIS(int idx)
 		[self swapToBlack];
 	});
 	
+	
+	
 	delayInSeconds = 2.0;
 	popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
 	dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
 		
-		[self doIndexSetCoalescerTest];
+		self.numberOfRuns = 100;
+		[self doNextRun:0];
 		return;
 		
 		self.titles = @[@"C", @"D", @"A"];
@@ -239,6 +458,7 @@ NSIndexSet* makeIS(int idx)
 
 - (NSInteger)collectionView:(UICollectionView *)view numberOfItemsInSection:(NSInteger)section;
 {
+	DLog(@"%i items", self.titles.count);
     return self.titles.count;
 }
 

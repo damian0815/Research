@@ -16,8 +16,8 @@
 @property (strong,readwrite,atomic) NSMutableArray* stupidArray;
 @property (assign,readwrite,atomic) int stupidArrayFinalValue;
 
-@property (assign,readwrite,atomic) unsigned int moveFrom;
-@property (assign,readwrite,atomic) unsigned int moveTo;
+@property (assign,readwrite,atomic) int moveFrom;
+@property (assign,readwrite,atomic) int moveTo;
 
 
 @end
@@ -51,7 +51,7 @@
 
 - (NSString*)longDescription
 {
-	return [NSString stringWithFormat:@"%@ added: %@  removed:\n%@   array contents %@ final value: %i", [super description], self.coalescedAdds, self.coalescedRemoves, self.stupidArray, self.stupidArrayFinalValue];
+	return [NSString stringWithFormat:@"%@ moved: %i->%i, added: %@  removed:\n%@   array contents %@ final value: %i", [super description], self.moveFrom, self.moveTo, self.coalescedAdds, self.coalescedRemoves, self.stupidArray, self.stupidArrayFinalValue];
 }
 
 - (NSMutableArray*)sortedArrayOfRangesInIndexSet:(NSIndexSet*)set
@@ -242,8 +242,16 @@
 				 [self.stupidArray insertObject:@"*" atIndex:idx];
 			 }];
 			//offset += nextNewRange.length;
+			
+			
 			if ( nextNewRange.location<=self.moveTo )
-				self.moveTo += nextNewRange.length;
+			{
+				if ( self.moveFrom < self.moveTo )
+				{
+					self.moveTo += nextNewRange.length;
+					DLog(@"moveTo is now %i", self.moveTo);
+				}
+			}
 			
 		}
 		else // removed
@@ -253,9 +261,20 @@
 			[self.stupidArray removeObjectsInRange:nextNewRange];
 			offset -= nextNewRange.length;
 			
-			
 			if ( nextNewRange.location<self.moveTo )
-				self.moveTo -= nextNewRange.length;
+			{
+				if ( self.moveFrom < self.moveTo )
+				{
+					self.moveTo -= nextNewRange.length;
+					DLog(@"moveTo is now %i", self.moveTo);
+				}
+				/*if ( self.moveTo<0 )
+				{
+					self.moveTo = 0;
+					DLog(@"clamped to 0");
+				}*/
+			}
+			
 			
 		}
 		
@@ -296,6 +315,7 @@
 
 		if ( self.moveTo>self.moveFrom )
 		{
+			DLog(@"moveTo > moveFrom");
 			// account for move, if necessary
 			if ( needsAccountForMoveFrom && self.moveFrom<i  )
 			{
@@ -308,9 +328,20 @@
 				needsAccountForMoveTo = NO;
 			}
 		}
-		else
+		else if ( self.moveTo<self.moveFrom)
 		{
-			NSAssert(NO, @"Failure: not tested");
+			DLog(@"moveTo < moveFrom");
+			// account for move, if necessary
+			if ( needsAccountForMoveFrom && self.moveFrom<i  )
+			{
+				offset += 1;
+				needsAccountForMoveFrom = NO;
+			}
+			if ( needsAccountForMoveTo && self.moveTo<i )
+			{
+				offset -= 1;
+				needsAccountForMoveTo = NO;
+			}
 		}
 			
 		NSObject* o = [self.stupidArray objectAtIndex:i];
