@@ -403,14 +403,23 @@
 		if ( self.moveTo>self.moveFrom )
 		{
 			//NSAssert( (int)self.stupidArray.count==(self.moveTo+1), @"Failure: looks like we removed the target");
-			DLog(@"moveTo>moveFrom, setting offset from %i to 0", offset);
+			DLog(@"moveTo>moveFrom, setting offset from %i to 0 (lastSeenValue %i, self.moveFrom %i)", offset, lastSeenValue, self.moveFrom);
 			offset = 0;
 		}
 		else if ( self.moveTo<self.moveFrom )
 		{
 			//NSAssert( lastSeenValue==self.moveFrom, @"Failure: looks like we removed the target");
-			DLog(@"moveTo<moveFrom, *not* setting offset from %i to 0", offset);
 			//offset = 0;
+			DLog(@"moveTo<moveFrom after the loop");
+			if ( lastSeenValue==self.moveFrom )
+			{
+				DLog(@" ... lastSeenValue==self.moveFrom, setting offset to 0");
+				offset = 0;
+			}
+			else
+			{
+				DLog(@" ... *not* setting offset from %i to 0", offset);
+			}
 		}
 		else
 		{
