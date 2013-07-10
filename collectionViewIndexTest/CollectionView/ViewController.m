@@ -88,7 +88,7 @@ NSIndexSet* makeIS(int idx)
 	
 	NSString* itemToMove = @"A";
 	unsigned int moveFrom = [titles indexOfObject:itemToMove];
-	unsigned int moveTo = 3;
+	unsigned int moveTo = 2;
 	NEIndexSetCoalescer* coalescer = [[NEIndexSetCoalescer alloc] init];
 	
 	if ( moveFrom != moveTo )
@@ -120,10 +120,12 @@ NSIndexSet* makeIS(int idx)
 	
 	DLog(@"before delete: %@ %@", titles, [coalescer longDescription]);
 	NSMutableIndexSet* removedIndices = [[NSMutableIndexSet alloc] init];
-	// remove A C
+	// remove s1 B
 	[removedIndices addIndex:1];
-	[removedIndices addIndex:5];
+	//[removedIndices addIndex:3];
+	[removedIndices addIndex:6];
 	[titles removeObjectsAtIndexes:removedIndices];
+	DLog(@"after delete: %@", titles );
 	[coalescer coalesceAdds:nil removes:removedIndices];
 	
 	NSMutableArray* adds = [NSMutableArray array];

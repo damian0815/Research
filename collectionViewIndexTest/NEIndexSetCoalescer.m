@@ -242,7 +242,7 @@
 				 [self.stupidArray insertObject:@"*" atIndex:idx];
 			 }];
 			//offset += nextNewRange.length;
-			if ( nextNewRange.location<self.moveTo )
+			if ( nextNewRange.location<=self.moveTo )
 				self.moveTo += nextNewRange.length;
 			
 		}
@@ -264,12 +264,12 @@
 		
 	}
 	
-	DLog(@"resulting move: %i to %i", self.moveFrom, self.moveTo);
+	DLog(@"resulting move according to coalescer: %i to %i", self.moveFrom, self.moveTo);
 	
 	//NSLog(@"done; resulting stupid %@", self.stupidArray);
 	
 	// parse stupid array to build indices
-	__block int moveOffset = 0;
+	offset = 0;
 	NSMutableIndexSet* parsedInsertions = [NSMutableIndexSet indexSet];;
 	NSMutableIndexSet* parsedRemovals = [NSMutableIndexSet indexSet];
 	int insertedCount = 0;
@@ -277,14 +277,16 @@
 	int lastSeenValue = -1;
 	int insertionStartActualIndex = -1;
 	
-	void (^addInsertion)(unsigned int start,unsigned int length) = ^(unsigned int start, unsigned int length)
+	void (^addInsertion)(unsigned int start,unsigned int length/*, int*/) = ^(unsigned int start, unsigned int length/*, int offsetAlreadyApplied*/)
 	{
 		NSRange range = NSMakeRange((unsigned int)((int)start), length);
+		DLog(@". insertion %i-%i", start, start+length-1/*, offsetAlreadyApplied */);
 		[parsedInsertions addIndexesInRange:range];
 	};
-	void (^addDeletion)(unsigned int start,unsigned int length) = ^(unsigned int start, unsigned int length)
+	void (^addDeletion)(unsigned int start,unsigned int length, int) = ^(unsigned int start, unsigned int length, int offsetAlreadyApplied)
 	{
-		NSRange range = NSMakeRange((unsigned int)((int)start+moveOffset), length);
+		NSRange range = NSMakeRange((unsigned int)((int)start), length);
+		DLog(@". deletion %i-%i (offset %i)", start, start+length-1, offsetAlreadyApplied );
 		[parsedRemovals addIndexesInRange:range];
 	};
 	
@@ -295,14 +297,14 @@
 		if ( self.moveTo>self.moveFrom )
 		{
 			// account for move, if necessary
-			if ( needsAccountForMoveFrom && self.moveFrom<=i  )
+			if ( needsAccountForMoveFrom && self.moveFrom<i  )
 			{
-				moveOffset += 1;
+				offset += 1;
 				needsAccountForMoveFrom = NO;
 			}
 			if ( needsAccountForMoveTo && self.moveTo<i )
 			{
-				moveOffset -= 1;
+				offset -= 1;
 				needsAccountForMoveTo = NO;
 			}
 		}
@@ -319,7 +321,7 @@
 			if ( insertedCount>0 )
 			{
 				// some stuff was inserted at i
-				addInsertion(insertionStartActualIndex,insertedCount);
+				addInsertion(insertionStartActualIndex,insertedCount/*,moveOffset*/);
 				/*NSRange range = NSMakeRange((unsigned int)insertionStartActualIndex+moveOffset, (unsigned int)insertedCount);
 				[parsedInsertions addIndexesInRange:range];*/
 				insertedCount = 0;
@@ -330,7 +332,7 @@
 			if ( foundIndex>expectedIndex )
 			{
 				// some stuff was removed
-				addDeletion(expectedIndex, (unsigned int)(foundIndex-expectedIndex));
+				addDeletion(expectedIndex+offset, (unsigned int)(foundIndex-expectedIndex),offset);
 				/*NSRange range = NSMakeRange((unsigned int)expectedIndex+moveOffset, (unsigned int)(foundIndex-expectedIndex));
 				[parsedRemovals addIndexesInRange:range];*/
 			}
@@ -373,7 +375,7 @@
 /*		int foundIndex =
 		int expectedIndex =*/
 		int removedCount = self.stupidArrayFinalValue-lastSeenValue;
-		addDeletion(removeStartIndex,(unsigned int)removedCount);
+		addDeletion(removeStartIndex+offset,(unsigned int)removedCount,offset);
 	/*
 		NSRange range = NSMakeRange(removeStartIndex, (unsigned int)removedCount);
 		[parsedRemovals addIndexesInRange:range];*/
@@ -384,7 +386,7 @@
 	if ( insertedCount )
 	{
 		// stuff was inserted at the end
-		addInsertion(insertionStartActualIndex,insertedCount);
+		addInsertion(insertionStartActualIndex,insertedCount/*,moveOffset*/);
 		/*
 		NSRange range = NSMakeRange((unsigned int)insertionStartActualIndex+moveOffset, (unsigned int)insertedCount);
 		[parsedInsertions addIndexesInRange:range];*/
